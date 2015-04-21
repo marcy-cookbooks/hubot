@@ -98,12 +98,11 @@ execute 'npm install' do
   notifies :restart, 'supervisor_service[hubot]'
 end
 
-sv_conf = node['hubot']['config']
-sv_conf['PATH'] = "#{node['hubot']['install_dir']}/node_modules/.bin:%(ENV_PATH)s"
+node.override['hubot']['config']['PATH'] = "#{node['hubot']['install_dir']}/node_modules/.bin:%(ENV_PATH)s"
 
 supervisor_service 'hubot' do
   command "#{node['hubot']['install_dir']}/node_modules/.bin/hubot --name '#{node['hubot']['name']}' --adapter #{node['hubot']['adapter']}"
   user node['hubot']['user']
   directory node['hubot']['install_dir']
-  environment sv_conf
+  environment node['hubot']['config']
 end
