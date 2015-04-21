@@ -12,4 +12,4 @@ supports 'redhat', '>= 6.0'
 
 depends 'git'
 depends 'nodejs'
-depends 'runit'
+depends 'supervisor'

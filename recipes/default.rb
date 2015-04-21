@@ -18,7 +18,7 @@
 #
 
 include_recipe 'git'
-include_recipe 'runit'
+include_recipe 'supervisor'
 include_recipe 'nodejs'
 
 user node['hubot']['user'] do
@@ -38,6 +38,7 @@ directory node['hubot']['install_dir'] do
 end
 
 # https://github.com/github/hubot/archive/v2.4.6.zip
+#checkout_location = node['hubot']['install_dir']
 checkout_location = ::File.join(Chef::Config[:file_cache_path], 'hubot')
 git checkout_location do
   repository 'https://github.com/github/hubot.git'
@@ -73,7 +74,7 @@ template "#{node['hubot']['install_dir']}/hubot-scripts.json" do
   group node['hubot']['group']
   mode '0644'
   variables node['hubot'].to_hash
-  notifies :restart, 'service[hubot]'
+  notifies :restart, 'supervisor_service[hubot]'
 end
 
 template "#{node['hubot']['install_dir']}/external-scripts.json" do
@@ -82,7 +83,7 @@ template "#{node['hubot']['install_dir']}/external-scripts.json" do
   group node['hubot']['group']
   mode '0644'
   variables node['hubot'].to_hash
-  notifies :restart, 'service[hubot]'
+  notifies :restart, 'supervisor_service[hubot]'
 end
 
 execute 'npm install' do
@@ -94,10 +95,14 @@ execute 'npm install' do
     'HOME' => node['hubot']['install_dir']
   )
   action :nothing
-  notifies :restart, 'service[hubot]'
+  notifies :restart, 'supervisor_service[hubot]'
 end
 
-runit_service 'hubot' do
-  options node['hubot'].to_hash
-  env node['hubot']['config']
+supervisor_service 'hubot' do
+  command "#{node['hubot']['install_dir']}/node_modules/.bin/hubot --name '#{node['hubot']['name']}' --adapter #{node['hubot']['adapter']}"
+  user node['hubot']['user']
+  directory node['hubot']['install_dir']
+  environment(
+    "PATH" => "#{node['hubot']['install_dir']}/node_modules/.bin:%(ENV_PATH)s"
+  )
 end
